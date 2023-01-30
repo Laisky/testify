@@ -2076,7 +2076,7 @@ Diff:
 @@ -1,2 +1,2 @@
 -(time.Time) 2020-09-24 00:00:00 +0000 UTC
 +(time.Time) 2020-09-25 00:00:00 +0000 UTC
- 
+
 `
 
 	actual = diff(
@@ -2421,7 +2421,7 @@ func TestEventuallyTrue(t *testing.T) {
 	state := 0
 	condition := func() bool {
 		defer func() {
-			state += 1
+			state++
 		}()
 		return state == 2
 	}

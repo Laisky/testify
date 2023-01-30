@@ -553,7 +553,7 @@ func ExampleValueAssertionFunc() {
 
 	dumbParse := func(input string) interface{} {
 		var x interface{}
-		json.Unmarshal([]byte(input), &x)
+		_ = json.Unmarshal([]byte(input), &x)
 		return x
 	}
 

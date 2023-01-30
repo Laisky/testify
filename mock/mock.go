@@ -473,7 +473,7 @@ func (m *Mock) Called(arguments ...interface{}) Arguments {
 	// For Ex:  github_com_docker_libkv_store_mock.WatchTree.pN39_github_com_docker_libkv_store_mock.Mock
 	// uses interface information unlike golang github.com/docker/libkv/store/mock.(*Mock).WatchTree
 	// With GCCGO we need to remove interface information starting from pN<dd>.
-	re := regexp.MustCompile("\\.pN\\d+_")
+	re := regexp.MustCompile(`\.pN\d+_`)
 	if re.MatchString(functionPath) {
 		functionPath = re.Split(functionPath, -1)[0]
 	}
@@ -807,14 +807,14 @@ func IsType(t interface{}) *IsTypeArgument {
 	return &IsTypeArgument{t: t}
 }
 
-// argumentMatcher performs custom argument matching, returning whether or
+// ArgumentMatcher performs custom argument matching, returning whether or
 // not the argument is matched by the expectation fixture function.
-type argumentMatcher struct {
+type ArgumentMatcher struct {
 	// fn is a function which accepts one argument, and returns a bool.
 	fn reflect.Value
 }
 
-func (f argumentMatcher) Matches(argument interface{}) bool {
+func (f ArgumentMatcher) Matches(argument interface{}) bool {
 	expectType := f.fn.Type().In(0)
 	expectTypeNilSupported := false
 	switch expectType.Kind() {
@@ -840,7 +840,7 @@ func (f argumentMatcher) Matches(argument interface{}) bool {
 	return false
 }
 
-func (f argumentMatcher) String() string {
+func (f ArgumentMatcher) String() string {
 	return fmt.Sprintf("func(%s) bool", f.fn.Type().In(0).String())
 }
 
@@ -855,7 +855,7 @@ func (f argumentMatcher) String() string {
 // |fn|, must be a function accepting a single argument (of the expected type)
 // which returns a bool. If |fn| doesn't match the required signature,
 // MatchedBy() panics.
-func MatchedBy(fn interface{}) argumentMatcher {
+func MatchedBy(fn interface{}) ArgumentMatcher {
 	fnType := reflect.TypeOf(fn)
 
 	if fnType.Kind() != reflect.Func {
@@ -868,7 +868,7 @@ func MatchedBy(fn interface{}) argumentMatcher {
 		panic(fmt.Sprintf("assert: arguments: %s does not return a bool", fn))
 	}
 
-	return argumentMatcher{fn: reflect.ValueOf(fn)}
+	return ArgumentMatcher{fn: reflect.ValueOf(fn)}
 }
 
 // Get Returns the argument at the specified index.
@@ -904,27 +904,28 @@ func (args Arguments) Diff(objects []interface{}) (string, int) {
 		maxArgCount = len(objects)
 	}
 
+	const missing = "(Missing)"
 	for i := 0; i < maxArgCount; i++ {
 		var actual, expected interface{}
 		var actualFmt, expectedFmt string
 
 		if len(objects) <= i {
-			actual = "(Missing)"
-			actualFmt = "(Missing)"
+			actual = missing
+			actualFmt = missing
 		} else {
 			actual = objects[i]
 			actualFmt = fmt.Sprintf("(%[1]T=%[1]v)", actual)
 		}
 
 		if len(args) <= i {
-			expected = "(Missing)"
-			expectedFmt = "(Missing)"
+			expected = missing
+			expectedFmt = missing
 		} else {
 			expected = args[i]
 			expectedFmt = fmt.Sprintf("(%[1]T=%[1]v)", expected)
 		}
 
-		if matcher, ok := expected.(argumentMatcher); ok {
+		if matcher, ok := expected.(ArgumentMatcher); ok {
 			var matches bool
 			func() {
 				defer func() {

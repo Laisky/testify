@@ -1567,9 +1567,7 @@ func TestIsArgsEqual(t *testing.T) {
 	assert.False(t, isArgsEqual(expected, args))
 
 	var arr = make([]interface{}, 6)
-	for i := 0; i < len(expected); i++ {
-		arr[i] = expected[i]
-	}
+	copy(arr, expected)
 	assert.True(t, isArgsEqual(expected, arr))
 }
 
@@ -1882,9 +1880,9 @@ func TestLoggingAssertExpectations(t *testing.T) {
 	AssertExpectationsForObjects(tcl, m, new(TestExampleImplementation))
 
 	require.Equal(t, 1, len(tcl.errs))
-	assert.Regexp(t, regexp.MustCompile("(?s)FAIL: 0 out of 1 expectation\\(s\\) were met.*The code you are testing needs to make 1 more call\\(s\\).*"), tcl.errs[0])
+	assert.Regexp(t, regexp.MustCompile(`(?s)FAIL: 0 out of 1 expectation\(s\) were met.*The code you are testing needs to make 1 more call\(s\).*`), tcl.errs[0])
 	require.Equal(t, 2, len(tcl.logs))
-	assert.Regexp(t, regexp.MustCompile("(?s)FAIL:\tGetTime\\(int\\).*"), tcl.logs[0])
+	assert.Regexp(t, regexp.MustCompile(`(?s)FAIL:\tGetTime\(int\).*`), tcl.logs[0])
 	require.Equal(t, "Expectations didn't match for Mock: *mock.timer", tcl.logs[1])
 }
 
@@ -1990,11 +1988,11 @@ func TestClosestCallUsesRepeatabilityToFindClosest(t *testing.T) {
 	m.On("TheExampleMethod7", []bool{true, true, true}).Return(nil).Once()
 	m.On("TheExampleMethod7", []bool{false, false, false}).Return(nil).Once()
 
-	m.TheExampleMethod7([]bool{true, true, true})
+	require.NoError(t, m.TheExampleMethod7([]bool{true, true, true}))
 
 	// Since the first mocked call has already been used, it now has no repeatability,
 	// thus the second mock should be shown as the closest match
-	m.TheExampleMethod7([]bool{true, true, false})
+	require.NoError(t, m.TheExampleMethod7([]bool{true, true, false}))
 }
 
 func TestClosestCallMismatchedArgumentValueInformation(t *testing.T) {
