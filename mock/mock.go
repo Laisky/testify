@@ -35,9 +35,16 @@ type Call struct {
 	// The name of the method that was or will be called.
 	Method string
 
-	CatchArguments func(...interface{}) bool
+	// CatchForAnyArgs func can catch any arguments
+	//
+	// this func is matched when returned true.
+	//
+	// if CatchForAnyArgs is true, will ignore Arguments.
+	CatchForAnyArgs func(...interface{}) bool
 
 	// Holds the arguments of the method.
+	//
+	// will be ignored if CatchForAnyArgs is not nil.
 	Arguments Arguments
 
 	// Holds the arguments that should be returned when
@@ -85,7 +92,7 @@ func newCall(parent *Mock,
 	return &Call{
 		Parent:          parent,
 		Method:          methodName,
-		CatchArguments:  catchArgument,
+		CatchForAnyArgs: catchArgument,
 		Arguments:       methodArguments,
 		ReturnArguments: make([]interface{}, 0),
 		callerInfo:      callerInfo,
@@ -358,6 +365,9 @@ func (m *Mock) On(methodName string, arguments ...interface{}) *Call {
 	return c
 }
 
+// Catch catch method with name for any arguments
+//
+//	Mock.Catch("MyMethod", func(args ...interface{}) bool)
 func (m *Mock) Catch(methodName string, catch func(arguments ...interface{}) bool) *Call {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -375,8 +385,8 @@ func (m *Mock) findExpectedCall(method string, arguments ...interface{}) (int, *
 
 	for i, call := range m.ExpectedCalls {
 		if call.Method == method {
-			if call.CatchArguments != nil {
-				if call.CatchArguments(arguments...) {
+			if call.CatchForAnyArgs != nil {
+				if call.CatchForAnyArgs(arguments...) {
 					expectedCall = call
 					if call.Repeatability > -1 {
 						return i, call
